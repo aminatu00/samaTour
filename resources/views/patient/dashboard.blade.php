@@ -14,9 +14,5 @@
         <h2 class="text-xl font-semibold">Réserver un ticket</h2>
         <p class="text-gray-600">Réservez un ticket rapidement pour votre visite.</p>
     </div>
-    <div class="bg-white p-6 shadow rounded-lg">
-        <h2 class="text-xl font-semibold">Notifications</h2>
-        <p class="text-gray-600">Toutes vos notifications récentes.</p>
-    </div>
 </div>
 @endsection
