@@ -52,7 +52,8 @@ class AdminController extends Controller
         }
 
         $patients = User::where('role', 'patient')->get();
-        return view('admin.send-notification', compact('patients'));
+        // Utilise 'admin.notifications' au lieu de 'admin.send-notification'
+        return view('admin.notifications', compact('patients'));
     }
 
     // 🔹 Paramètres
