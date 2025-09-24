@@ -1,34 +1,81 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Dashboard Admin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100">
-    <div class="p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold">Bienvenue dans l’espace Admin</h1>
-            
-            <!-- Bouton de déconnexion -->
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
-                    Déconnexion
-                </button>
-            </form>
-        </div>
+@extends('admin.layout')
 
-        <div class="grid grid-cols-3 gap-4">
-            <div class="bg-white p-6 shadow rounded-lg">
-                <h2 class="text-xl font-semibold">Gestion des utilisateurs</h2>
-                <p class="text-gray-600">Créer, modifier ou supprimer des agents et patients.</p>
-            </div>
-            <div class="bg-white p-6 shadow rounded-lg">
-                <h2 class="text-xl font-semibold">Rapports</h2>
-                <p class="text-gray-600">Voir les statistiques et rapports du système.</p>
-            </div>
+@section('title', 'Dashboard Admin/Agent')
+
+@section('content')
+<div class="p-6">
+    <h1 class="text-2xl font-bold mb-6">Tableau de bord Admin/Agent</h1>
+
+    {{-- Résumé --}}
+    <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="bg-white p-4 shadow rounded">
+            <h2 class="font-semibold text-gray-700">Tickets en attente</h2>
+            <p class="text-2xl font-bold" id="waiting-count">{{ $waitingTicketsCount }}</p>
+        </div>
+        <div class="bg-white p-4 shadow rounded">
+            <h2 class="font-semibold text-gray-700">Services</h2>
+            <p class="text-2xl font-bold">{{ $servicesCount }}</p>
+        </div>
+        <div class="bg-white p-4 shadow rounded">
+            <h2 class="font-semibold text-gray-700">Patients totaux</h2>
+            <p class="text-2xl font-bold">{{ $patientsCount }}</p>
         </div>
     </div>
-</body>
-</html>
+
+    {{-- Files d’attente par service --}}
+    <h2 class="text-xl font-bold mb-4">Files d’attente</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        @foreach($services as $service)
+            <div class="bg-white shadow rounded p-4">
+                <h3 class="text-lg font-semibold mb-3">{{ $service->name }}</h3>
+                <div id="queue-{{ $service->id }}">
+                    @include('admin.partials.queue', [
+                        'tickets' => $service->tickets()->where('status', 'en_attente')->orderBy('created_at')->get()
+                    ])
+                </div>
+            </div>
+        @endforeach
+    </div>
+</div>
+
+<script>
+
+function refreshQueue(serviceId) {
+    fetch(`/admin/services/${serviceId}/queue`)
+        .then(res => res.text())
+        .then(html => {
+            if(html.trim().length > 0){
+                document.querySelector(`#queue-${serviceId}`).innerHTML = html;
+            }
+        });
+}
+
+setInterval(() => {
+    @foreach($services as $service)
+        refreshQueue({{ $service->id }});
+    @endforeach
+}, 5000);
+
+
+
+// Quand on clique sur "Appeler"
+document.addEventListener('click', function(e){
+    if(e.target && e.target.classList.contains('call-ticket')){
+        let ticketId = e.target.dataset.id;
+        let serviceId = e.target.dataset.service;
+        fetch(`/admin/tickets/${ticketId}/status`, {
+            method: 'PATCH',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({status: 'appele'})
+        }).then(() => refreshQueue(serviceId));
+    }
+});
+
+// Rafraîchissement automatique toutes les 5 secondes
+
+
+</script>
+@endsection

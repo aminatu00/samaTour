@@ -5,9 +5,19 @@
 @section('content')
 <div class="p-6">
     <h2 class="text-xl font-bold mb-4">Rangs pour le service {{ $service->name }} ({{ $category }})</h2>
+    
+    {{-- Affichage du rang du patient connecté --}}
+    @if($rang)
+        <div class="mb-4 p-3 bg-green-100 border-l-4 border-green-500 text-green-700">
+            <strong>Votre rang actuel :</strong> {{ $rang }}
+            <br>
+            <strong>Votre numéro de ticket :</strong> {{ $myTicket->numero_ticket ?? 'Non réservé' }}
+        </div>
+    @endif
 
+    {{-- Tableau des tickets --}}
     @if($tickets->count() > 0)
-    <table class="w-full bg-white shadow rounded">
+    <table class="w-full bg-white shadow rounded"
         <thead class="bg-gray-200">
             <tr>
                 <th class="px-4 py-2">Rang</th>
