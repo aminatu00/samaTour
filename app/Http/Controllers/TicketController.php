@@ -11,11 +11,66 @@ use Paydunya\Checkout\CheckoutInvoice;
 class TicketController extends Controller
 {
     
+public function suivre()
+{
+    $user = auth()->user();
+
+    // Récupérer tous les tickets en attente ou appelés de ce patient
+$tickets = $user->tickets()->whereIn('status', ['en_attente', 'appele'])->get();
+
+    // Calculer le rang dans chaque service
+    $positions = [];
+    foreach ($tickets as $ticket) {
+        $countBefore = $ticket->service->tickets()
+            ->where('status', 'en_attente')
+            ->where('created_at', '<', $ticket->created_at)
+            ->count();
+        $positions[$ticket->service->id] = $countBefore;
+    }
+
+    // Récupérer tous les services
+    $services = \App\Models\Service::all();
+
+    return view('patient.suivre', compact('tickets', 'positions', 'services'));
+}
+
+
+public function suivreTicket(Ticket $ticket)
+{
+    // On récupère tous les tickets du même service encore en attente
+    $tickets = Ticket::where('service_id', $ticket->service_id)
+        ->where('status', 'en_attente')
+        ->orderBy('created_at')
+        ->get();
+
+    // Trouver la position du ticket dans la liste
+    $position = $tickets->search(function($t) use ($ticket) {
+        return $t->id === $ticket->id;
+    });
+
+    return view('patient.suivre', [
+        'ticket' => $ticket,
+        'position' => $position, // 0 = premier à passer
+    ]);
+}
+
+public function ticketPosition(Ticket $ticket)
+{
+    $countBefore = Ticket::where('service_id', $ticket->service_id)
+                        ->where('status', 'en_attente')
+                        ->where('numero_ticket', '<', $ticket->numero_ticket)
+                        ->count();
+
+    return response()->json(['before' => $countBefore]);
+}
+
+
+
 public function index()
 {
     $tickets = Ticket::where('user_id', auth()->id())
                      ->with('service')
-                     ->get();
+                     ->paginate(10); // <- ici on utilise paginate au lieu de get()
 
     return view('patient.tickets', compact('tickets'));
 }
@@ -92,134 +147,119 @@ public function create()
 }
 
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'service_id' => 'required|exists:services,id',
-            'category' => 'required|in:standard,urgent'
-        ]);
+    // public function store(Request $request)
+    // {
+    //     $request->validate([
+    //         'service_id' => 'required|exists:services,id',
+    //         'category' => 'required|in:standard,urgent'
+    //     ]);
 
-        // Calcul du rang pour ce service et cette catégorie
-        $lastTicket = Ticket::where('service_id', $request->service_id)
-                            ->where('category', $request->category)
-                            ->latest()
-                            ->first();
+    //     // Calcul du rang pour ce service et cette catégorie
+    //     $lastTicket = Ticket::where('service_id', $request->service_id)
+    //                         ->where('category', $request->category)
+    //                         ->latest()
+    //                         ->first();
 
-        $numero_ticket = $lastTicket ? $lastTicket->numero_ticket + 1 : 1;
+    //     $numero_ticket = $lastTicket ? $lastTicket->numero_ticket + 1 : 1;
 
-        $ticket = Ticket::create([
-            'user_id' => Auth::id(),
-            'service_id' => $request->service_id,
-            'category' => $request->category,
-            'status' => 'en_attente',
-            'numero_ticket' => $numero_ticket,
-        ]);
+    //     $ticket = Ticket::create([
+    //         'user_id' => Auth::id(),
+    //         'service_id' => $request->service_id,
+    //         'category' => $request->category,
+    //         'status' => 'en_attente',
+    //         'numero_ticket' => $numero_ticket,
+    //     ]);
 
-        // Ici on peut rediriger vers PayDunya pour le paiement
-        return redirect()->route('patient.dashboard')
-                         ->with('success', 'Ticket réservé avec succès ! Numéro : ' . $ticket->numero_ticket);
+    //     // Ici on peut rediriger vers PayDunya pour le paiement
+    //     return redirect()->route('patient.dashboard')
+    //                      ->with('success', 'Ticket réservé avec succès ! Numéro : ' . $ticket->numero_ticket);
+    // }
+
+
+public function store(Request $request)
+{
+    $request->validate([
+        'service_id' => 'required|exists:services,id',
+        'category' => 'required|in:standard,urgent'
+    ]);
+
+    $userId = Auth::id();
+
+    // Vérifier si ce patient a déjà un ticket en attente dans ce service + catégorie
+    $existingTicket = Ticket::where('user_id', $userId)
+        ->where('service_id', $request->service_id)
+        ->where('category', $request->category)
+        ->where('status', 'en_attente')
+        ->first();
+
+    if ($existingTicket) {
+        return redirect()->back()
+            ->with('error', 'Vous avez déjà réservé un ticket pour ce service et ce type.');
     }
 
+    // Récupérer le dernier numéro pour ce service + catégorie
+    $lastTicket = Ticket::where('service_id', $request->service_id)
+        ->where('category', $request->category)
+        ->orderBy('numero_ticket', 'desc')
+        ->first();
+
+    $numero_ticket = $lastTicket ? $lastTicket->numero_ticket + 1 : 1;
+
+    // Créer le ticket
+    $ticket = Ticket::create([
+        'user_id' => $userId,
+        'service_id' => $request->service_id,
+        'category' => $request->category,
+        'status' => 'en_attente',
+        'numero_ticket' => $numero_ticket,
+    ]);
+
+    return redirect()->route('patient.dashboard')
+        ->with('success', 'Ticket réservé avec succès ! Numéro : ' . $ticket->numero_ticket);
+}
+
+
+public function serviceQueue(Service $service)
+{
+    $tickets = $service->tickets()
+                       ->where('status', 'en_attente')
+                       ->orderBy('created_at')
+                       ->get();
+
+    return view('admin.partials.queue', compact('tickets'));
+}
 
 
 
+public function getTicketPosition(Ticket $ticket)
+{
+    // Vérifier que ce ticket appartient bien à l'utilisateur connecté
+    if ($ticket->user_id !== auth()->id()) {
+        abort(403);
+    }
 
+    $tickets = Ticket::where('service_id', $ticket->service_id)
+        ->where('status', 'en_attente')
+        ->orderBy('created_at')
+        ->get();
 
+    // Trouver la position du ticket dans la file
+    $position = $tickets->search(function($t) use ($ticket) {
+        return $t->id === $ticket->id;
+    });
 
-// public function store(Request $request)
-// {
-//     $request->validate([
-//         'service_id' => 'required|exists:services,id',
-//         'category'   => 'required|in:standard,urgent',
-//     ]);
+    return response()->json([
+        'status'   => $ticket->status,
+        'position' => $position !== false ? $position + 1 : 0
+    ]);
+}
 
-//     // 1. Création du ticket
-//     $ticket = Ticket::create([
-//         'user_id'       => auth()->id(),
-//         'service_id'    => $request->service_id,
-//         'category'      => $request->category,
-//         'status'        => 'en_attente',
-//         'numero_ticket' => $this->getNextTicketNumber($request->service_id, $request->category),
-//     ]);
-
-//     // 2. Génération de la facture PayDunya
-//     $invoice = new CheckoutInvoice();
-
-//     $invoice->addItem(
-//         "Ticket pour le service {$ticket->service->name}", // Nom article
-//         1,                                                 // Quantité
-//         1000,                                              // Prix unitaire (FCFA)
-//         "Numéro de ticket: {$ticket->numero_ticket}"       // Description
-//     );
-
-//     // Définir les URLs
-//     $invoice->setCallbackUrl(route('patient.payment.callback')); // Notification PayDunya
-//     $invoice->setCancelUrl(route('patient.dashboard'));          // Annulation
-//     $invoice->setReturnUrl(route('patient.dashboard'));          // Succès
-
-//     // 3. Création de la facture PayDunya et redirection
-//     if ($invoice->create()) {
-//         return redirect($invoice->response_text->checkout_url);
-//     } else {
-//         return back()->with('error', 'Erreur PayDunya : '.$invoice->response_text);
-//     }
-// }
-
-
-
-// public function callback(Request $request)
-// {
-//     $token = $request->input('token'); // PayDunya envoie le token de la facture
-
-//     if (!$token) {
-//         return response()->json(['error' => 'Token manquant'], 400);
-//     }
-
-//     // Vérifier le statut de la facture chez PayDunya
-//     $invoice = new \Paydunya\Checkout\CheckoutInvoice();
-
-//     if ($invoice->confirm($token)) {
-//         // ✅ Paiement réussi
-//         $ticketId = $invoice->getCustomData("ticket_id");
-
-//         if ($ticketId) {
-//             $ticket = Ticket::find($ticketId);
-//             if ($ticket) {
-//                 $ticket->status = 'paye';
-//                 $ticket->save();
-//             }
-//         }
-
-//         return response()->json([
-//             'success' => true,
-//             'message' => 'Paiement confirmé avec succès'
-//         ]);
-//     } else {
-//         // ❌ Paiement échoué
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'Paiement non confirmé',
-//             'error'   => $invoice->response_text
-//         ], 400);
-//     }
-// }
-
-// public function store(Request $request)
-// {
-//     $request->validate([
-//         'service_id' => 'required|exists:services,id',
-//         'category' => 'required|in:standard,urgent',
-//     ]);
-
-//     $ticket = new Ticket();
-//     $ticket->service_id = $request->service_id;
-//     $ticket->category = $request->category;
-//     $ticket->numero_ticket = $this->getNextTicketNumber($request->service_id, $request->category);
-//     $ticket->status = 'reserve'; // réservé directement sans paiement
-//     $ticket->save();
-
-//     return redirect()->route('patient.dashboard')
-//                      ->with('success', 'Votre ticket a été réservé avec succès !');
-// }
+public function show(Ticket $ticket)
+{
+    if ($ticket->user_id !== auth()->id()) {
+        abort(403);
+    }
+    return view('patient.ticket', compact('ticket'));
+}
 
 }

@@ -3,6 +3,10 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TicketController;
+//admin
+
+
+use App\Http\Controllers\AdminDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,6 +59,101 @@ Route::get('/patient/rangs/{service}/{category}', [TicketController::class, 'ran
     ->middleware('auth');
 
 Route::post('/payment/callback', [TicketController::class, 'callback'])->name('patient.payment.callback');
+
+
+// Rafraîchir une file d’attente spécifique
+Route::get('services/{service}/queue', [AdminDashboardController::class, 'getServiceQueue']);
+
+
+// Page de suivi du ticketv
+Route::get('tickets/{ticket}', [TicketController::class, 'show'])->name('patient.ticket');
+
+// API pour suivre la position en file
+Route::get('tickets/{ticket}/position', [TicketController::class, 'getTicketPosition']);
+
+
+
+     Route::get('/tickets/{ticket}/position', [TicketController::class, 'ticketPosition']);
+
+
+Route::patch('/admin/tickets/{ticket}/status', [AdminDashboardController::class, 'updateStatus'])
+    ->name('admin.tickets.updateStatus');
+
+Route::get('/mes-tickets/{ticket}', [TicketController::class, 'suivreTicket'])
+    ->name('patient.suivre');
+
+
+    Route::middleware(['auth', 'role:patient'])->group(function () {
+    Route::get('/suivre', [TicketController::class, 'suivre'])->name('patient.suivre');
+});
+
+
+// routes/web.php
+Route::get('/admin/services/{service}/queue', [AdminDashboardController::class, 'serviceQueue'])
+    ->name('admin.services.queue')
+    ->middleware(['auth','role:admin']);
+
+
+
+
+
+
+
+//adminnnnnnnnnnnnnn
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+
+    // Services
+    Route::get('services', [AdminDashboardController::class, 'services'])->name('admin.services');
+    Route::get('services/create', [AdminDashboardController::class, 'createService'])->name('admin.services.create');
+    Route::post('services', [AdminDashboardController::class, 'storeService'])->name('admin.services.store');
+    Route::get('services/{service}/edit', [AdminDashboardController::class, 'editService'])->name('admin.services.edit');
+    Route::put('services/{service}', [AdminDashboardController::class, 'updateService'])->name('admin.services.update');
+    Route::delete('services/{service}', [AdminDashboardController::class, 'destroyService'])->name('admin.services.destroy');
+
+    // Tickets
+    Route::get('tickets', [AdminDashboardController::class, 'tickets'])->name('admin.tickets');
+    Route::patch('tickets/{ticket}/status', [AdminDashboardController::class, 'updateTicketStatus'])->name('admin.tickets.updateStatus');
+
+    // Users
+    Route::get('users', [AdminDashboardController::class, 'users'])->name('admin.users');
+});
+
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
+    Route::get('/tickets/ajax', [AdminDashboardController::class, 'ticketsAjax'])->name('admin.tickets.ajax');
+    Route::patch('/tickets/{ticket}/status', [AdminDashboardController::class, 'updateStatus'])->name('admin.tickets.updateStatus');
+});
+
+
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
+    Route::get('/dashboard', [AdminDashboardController::class, 'dashboard'])->name('admin.dashboard');
+
+    // CRUD Patients
+    Route::get('/patients', [AdminDashboardController::class, 'patientsIndex'])->name('admin.patients.index');
+    Route::get('/patients/create', [AdminDashboardController::class, 'patientsCreate'])->name('admin.patients.create');
+    Route::post('/patients', [AdminDashboardController::class, 'patientsStore'])->name('admin.patients.store');
+    Route::get('/patients/{patient}/edit', [AdminDashboardController::class, 'patientsEdit'])->name('admin.patients.edit');
+    Route::put('/patients/{patient}', [AdminDashboardController::class, 'patientsUpdate'])->name('admin.patients.update');
+    Route::delete('/patients/{patient}', [AdminDashboardController::class, 'patientsDestroy'])->name('admin.patients.destroy');
+});
+Route::get('/admin/tickets/ajax', [AdminDashboardController::class, 'ticketsByService'])
+     ->name('admin.tickets.ajax');
 
 
 require __DIR__.'/auth.php';
