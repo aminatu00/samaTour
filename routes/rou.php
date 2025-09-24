@@ -26,6 +26,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+
 // Route pour afficher le formulaire d'envoi de notification côté admin
 Route::prefix('admin')->middleware('auth')->name('admin.')->group(function () {
     Route::get('/notifications', [AdminController::class, 'sendNotification'])
@@ -42,6 +43,7 @@ Route::middleware(['auth', 'role:patient'])->group(function () {
     Route::get('/patient/notifications', [NotificationController::class, 'index'])
         ->name('patient.notifications');
 });
+
 
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -120,20 +122,6 @@ Route::get('/admin/services/{service}/queue', [AdminDashboardController::class, 
 
 
 //adminnnnnnnnnnnnnn
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     // Dashboard

@@ -1,6 +1,7 @@
 @extends('patient.layout')
 
 @section('title', 'Réserver un ticket')
+@section('page-title', 'Réserver un ticket')
 
 @section('content')
 <div class="p-6">
@@ -28,7 +29,7 @@
         </div>
 
         <button type="submit" class="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-            Réserver et payer
+            Réserver
         </button>
     </form>
 
@@ -66,8 +67,6 @@ function fetchRanks() {
     fetch(`/patient/ranks/${service}/${category}`)
         .then(res => res.json())
         .then(data => {
-            // data.tickets = liste des tickets
-            // data.waiting = nombre de patients en attente
             let tickets = data.tickets || [];
             let waiting = data.waiting || 0;
 
@@ -75,13 +74,13 @@ function fetchRanks() {
 
             let tbody = document.getElementById('tickets-table');
             tbody.innerHTML = '';
-            if(tickets.length === 0){
+            if (tickets.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="3" class="text-center p-4">Aucun ticket en attente</td></tr>`;
                 return;
             }
-            tickets.forEach(ticket => {
+            tickets.forEach((ticket, index) => {
                 tbody.innerHTML += `<tr>
-                    <td class="border px-4 py-2">${ticket.numero_ticket}</td>
+                    <td class="border px-4 py-2">${index + 1}</td>
                     <td class="border px-4 py-2">${ticket.patient_name}</td>
                     <td class="border px-4 py-2">${ticket.category}</td>
                 </tr>`;
