@@ -98,17 +98,18 @@ Route::prefix('admin')->middleware('auth')->name('admin.')->group(function () {
     Route::get('/services/ajouter', [ServicesController::class, 'ajouter'])->name('services.ajouter');
     
     // Enregistrement d'un service (Méthode POST)
-    Route::post('/services/ajouter', [ServicesController::class, 'store'])->name('services.store');
+    Route::post('/services', [ServicesController::class, 'store'])->name('services.store');
     
     // Formulaire de modification d'un service
     Route::get('/services/modifier/{id}', [ServicesController::class, 'modifier'])->name('services.modifier');
     
-    // Mise à jour d'un service
+    // Mise à jour d'un service (Méthode PUT)
     Route::put('/services/{id}', [ServicesController::class, 'update'])->name('services.update');
     
     // Suppression d'un service
     Route::delete('/services/{id}', [ServicesController::class, 'supprimer'])->name('services.supprimer');
 });
+
 
 
 require __DIR__.'/auth.php';

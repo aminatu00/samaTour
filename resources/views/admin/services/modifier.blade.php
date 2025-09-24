@@ -5,9 +5,9 @@
 @section('page-title', 'Modifier le service')
 
 @section('content')
-    <form action="{{ route('admin.services.modifier', $service->id) }}" method="POST" class="space-y-4">
+    <form action="{{ route('admin.services.update', $service->id) }}" method="POST" class="space-y-4">
         @csrf
-        @method('PUT')
+        @method('PUT') <!-- Utilisation de PUT pour la mise à jour -->
         <div>
             <label class="block text-gray-700 mb-1">Nom du service</label>
             <input type="text" name="name" class="w-full border rounded p-2" value="{{ $service->name }}" required>
