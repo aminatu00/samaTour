@@ -1,5 +1,8 @@
 <?php
-
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\NotificationController;
+use App\Models\User; // Pour récupérer les patients
+use App\Models\Notification;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TicketController;
@@ -22,6 +25,33 @@ use App\Http\Controllers\AdminDashboardController;
 Route::get('/', function () {
     return view('welcome');
 });
+
+// Route pour afficher le formulaire d'envoi de notification côté admin
+Route::prefix('admin')->middleware('auth')->name('admin.')->group(function () {
+    Route::get('/notifications', [AdminController::class, 'sendNotification'])
+        ->name('notifications'); // formulaire admin pour envoyer la notif
+});
+
+// Route pour enregistrer la notification depuis le formulaire admin
+Route::post('/notifications', [NotificationController::class, 'store'])
+    ->name('notifications.store')
+    ->middleware('auth');
+
+// Route pour afficher les notifications côté patient
+Route::middleware(['auth', 'role:patient'])->group(function () {
+    Route::get('/patient/notifications', [NotificationController::class, 'index'])
+        ->name('patient.notifications');
+});
+
+// Route pour supprimer une notification
+Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('patient.notifications.delete');
+
+
+// Route pour marquer une notification comme lue
+Route::put('/notifications/{notification}/mark-read', [NotificationController::class, 'markAsRead'])
+    ->name('notifications.mark-read')
+    ->middleware('auth');
+
 
 Route::get('/dashboard', function () {
     return view('dashboard');

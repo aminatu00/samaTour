@@ -111,7 +111,16 @@
                    class="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 group relative nav-item">
                     <i class="fas fa-users w-5 text-center text-indigo-200 group-hover:text-white"></i>
                     <span class="font-medium">Patients</span>
+                </a> 
+                  
+                <a href="{{ route('admin.notifications') }}" 
+                    class="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 group relative nav-item">
+                    <i class="fas fa-bell w-5 text-center text-indigo-200 group-hover:text-white"></i>
+                    <span class="font-medium">Envoyer Notification</span>
                 </a>
+
+                
+
                 
                 <!-- Section Statistiques -->
                 <!-- <div class="mt-8 pt-6 border-t border-white/20">

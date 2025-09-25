@@ -98,6 +98,19 @@
                     <i class="fas fa-arrow-right ml-auto text-sm"></i>
                 </a>
 
+               <a href="{{ route('patient.notifications') }}" 
+   class="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 group">
+   
+   <i class="fas fa-bell w-5 text-center text-blue-200 group-hover:text-white"></i>
+   <span class="font-medium">Notifications</span>
+
+   <!-- Badge de notifications non lues -->
+   <span class="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+       {{ $unreadCount ?? 0 }} <!-- Affichage dynamique ou 0 si non défini -->
+   </span>
+</a>
+
+
                 <!-- <a href="#" 
                    class="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 group">
                     <i class="fas fa-bell w-5 text-center text-blue-200 group-hover:text-white"></i>
