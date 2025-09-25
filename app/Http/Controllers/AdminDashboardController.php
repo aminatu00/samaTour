@@ -6,6 +6,10 @@ use App\Models\Ticket;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Http\Request;
+<<<<<<< HEAD
+=======
+ use Carbon\Carbon; // N'oublie pas d'importer Carbon
+>>>>>>> origin/amina
 
 class AdminDashboardController extends Controller
 {
@@ -45,11 +49,28 @@ public function updateStatus(Request $request, Ticket $ticket)
 
 
     // SERVICES
+<<<<<<< HEAD
     public function services()
     {
         $services = Service::all();
         return view('admin.services.index', compact('services'));
     }
+=======
+
+
+public function services()
+{
+    $services = Service::withCount([
+        'tickets', // total des tickets
+        'tickets as tickets_today_count' => function ($query) {
+            $query->whereDate('created_at', Carbon::today()); // tickets aujourd'hui
+        }
+    ])->paginate(10); // pagination nécessaire pour hasPages()
+
+    return view('admin.services.index', compact('services'));
+}
+
+>>>>>>> origin/amina
 
     public function createService()
     {
@@ -82,11 +103,20 @@ public function updateStatus(Request $request, Ticket $ticket)
     }
 
     // TICKETS
+<<<<<<< HEAD
     public function tickets()
     {
         $tickets = Ticket::with('user','service')->get();
         return view('admin.tickets.index', compact('tickets'));
     }
+=======
+  public function tickets()
+{
+    $tickets = Ticket::with('user', 'service')->paginate(10); // 10 éléments par page, adapte si besoin
+    return view('admin.tickets.index', compact('tickets'));
+}
+
+>>>>>>> origin/amina
 
     public function updateTicketStatus(Request $request, Ticket $ticket)
     {
@@ -153,6 +183,7 @@ public function patientsStore(Request $request) {
 
 // Formulaire d'édition
 public function patientsEdit(User $patient) {
+<<<<<<< HEAD
     return view('admin.patients.edit', compact('patient'));
 }
 
@@ -181,6 +212,29 @@ public function suivre()
 }
 
 
+=======
+    return view('admin.users.edit', compact('patient'));
+}
+
+// Mettre à jour un patient
+public function patientsUpdate(Request $request, User $patient) {
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email,'.$patient->id,
+        'password' => 'nullable|string|min:6|confirmed',
+    ]);
+
+    $patient->name = $request->name;
+    $patient->email = $request->email;
+    if($request->password) {
+        $patient->password = bcrypt($request->password);
+    }
+    $patient->save();
+
+    return redirect()->route('admin.patients.index')->with('success', 'Patient mis à jour !');
+}
+
+>>>>>>> origin/amina
 // Supprimer un patient
 public function patientsDestroy(User $patient) {
     $patient->delete();

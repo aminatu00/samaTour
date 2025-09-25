@@ -16,7 +16,11 @@ public function suivre()
     $user = auth()->user();
 
     // Récupérer tous les tickets en attente ou appelés de ce patient
+<<<<<<< HEAD
     $tickets = $user->tickets()->whereIn('status', ['en_attente', 'appele'])->get();
+=======
+$tickets = $user->tickets()->whereIn('status', ['en_attente', 'appele'])->get();
+>>>>>>> origin/amina
 
     // Calculer le rang dans chaque service
     $positions = [];
@@ -29,7 +33,11 @@ public function suivre()
     }
 
     // Récupérer tous les services
+<<<<<<< HEAD
    $services = Service::all();
+=======
+    $services = \App\Models\Service::all();
+>>>>>>> origin/amina
 
     return view('patient.suivre', compact('tickets', 'positions', 'services'));
 }
@@ -66,11 +74,15 @@ public function ticketPosition(Ticket $ticket)
 
 
 
+<<<<<<< HEAD
     public function index()
+=======
+public function index()
+>>>>>>> origin/amina
 {
     $tickets = Ticket::where('user_id', auth()->id())
                      ->with('service')
-                     ->get();
+                     ->paginate(10); // <- ici on utilise paginate au lieu de get()
 
     return view('patient.tickets', compact('tickets'));
 }
