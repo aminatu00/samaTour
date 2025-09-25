@@ -9,6 +9,7 @@
     <form action="{{ route('notifications.store') }}" method="POST" class="space-y-4">
         @csrf
         <div>
+        <!-- Patient Selection Dropdown -->
             <label class="block text-gray-700 mb-1">Sélectionner un patient</label>
             <select name="user_id" class="w-full border rounded p-2">
                 @foreach($patients as $patient)
